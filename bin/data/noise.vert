@@ -2,17 +2,74 @@
 
 layout (location = 0) in vec3 VertexPosition;
 
-uniform mat4 modelViewProjectionMatrix;
+
+uniform mat4 modelMatrix;
+uniform mat4 MVP;
+
+uniform vec2 offset0, offset1, offset2;
+uniform vec2 freq0, freq1, freq2;
+uniform float amp0, amp1, amp2;
+
+uniform float distanceFactor;
+
 uniform vec3 cameraPos;
 uniform sampler2DRect tex0;
 
-out float dist;
-out vec4 noiseFactor;
+out float distFactor;
+out float value;
+
+float wrap(float target, float operand){
+    if(operand == 0.0)
+        return 0;
+    while(target < 0)
+        target += operand;
+    while(target >= operand)
+        target -= operand;
+    return target;
+}
+
+float cosineInterpolation(float a, float b, float x){
+    float f = (1.0 - cos(x * 3.14159265359)) * 0.5;
+    return  a*(1-f) + b*f;
+}
+
+float cosineInterpolation2d(float v1, float v2, float v3, float v4, float x, float y){
+    return cosineInterpolation(cosineInterpolation(v1, v2, x),
+                               cosineInterpolation(v3, v4, x),
+                               y);
+}
+
+float calc(vec2 freq, vec2 offset, float amp){
+    float vx = VertexPosition.x * (freq.x / 1024.0) + offset.x;
+    float vy = VertexPosition.y * (freq.y / 768.0) + offset.y;
+    float ix = floor(vx);
+    float iy = floor(vy);
+    
+    // interpolation factor
+    float factorX = vx - ix;
+    float factorY = vy - iy;
+    
+    ix = wrap(ix, 1024.0f);
+    iy = wrap(iy, 768.0f);
+    float nx = wrap(ix+1, 1024.0f );
+    float ny = wrap(iy+1, 768.0f );
+    
+    float v1 = texture(tex0, vec2(ix, iy))[0];
+    float v2 = texture(tex0, vec2(nx, iy))[0];
+    float v3 = texture(tex0, vec2(ix, ny))[0];
+    float v4 = texture(tex0, vec2(nx, ny))[0];
+    // interpolate four values
+    return (cosineInterpolation2d(v1, v2, v3, v4, factorX, factorY ) - 0.5) * 2.0 * amp;
+}
 
 void main(){
+    value = 0.0;
+    value += calc(freq0, offset0, amp0);
+    value += calc(freq1, offset1, amp1);
+    value += calc(freq2, offset2, amp2);
     
-    gl_Position =  vec4(VertexPosition.x-512, VertexPosition.y-384, VertexPosition.z, 1.0) * modelViewProjectionMatrix;
-    dist = distance(cameraPos, VertexPosition);
-
-    noiseFactor = texture(tex0, vec2(VertexPosition));
+    gl_Position =   MVP * vec4(VertexPosition.x, VertexPosition.y, value, 1.0);
+    distFactor = 1.0- (distance(vec4(cameraPos,1.0), modelMatrix * vec4(VertexPosition, 1.0)) / distanceFactor);
 }
+
+

@@ -1,10 +1,12 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxOscReceiver.h"
 
 class ofApp : public ofBaseApp{
 
 	public:
+    ofApp(std::map<std::string, std::vector<float> > parameterMap);
 		void setup();
 		void update();
 		void draw();
@@ -25,11 +27,19 @@ class ofApp : public ofBaseApp{
         ofShader shader;
         ofCamera camera;
     
-    
+        ofVec2f offset[3];
+        ofMatrix4x4 modelMatrix;
         ofMatrix4x4 viewMatrix;
         ofMatrix4x4 projectionMatrix;
+        ofMatrix4x4 MVP;
         ofVbo vbo;
     
         ofImage noiseImage;
 
+        std::map<std::string, std::vector<float> > parameterMap; // osc
+        ofxOscReceiver oscReceiver;
+    
+        void processOSC();
+        void applyData();
+        void avoidZero(float &value); 
 };
