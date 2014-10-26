@@ -1,26 +1,71 @@
 #include "ofApp.h"
+#include "const.h"
 
-//--------------------------------------------------------------
-void ofApp::setup(){
+
+
+void ofApp::createTexture(){
+    noiseImage.allocate(ofGetWidth(), ofGetHeight(), OF_IMAGE_GRAYSCALE );
     
-    ofBackground(ofColor::black);
-    if(!shader.load("noise")){
-        ofExit(1);
+    
+    for(int i = 0; i < gNumPixels; i++){
+        noiseImage.getPixels()[i] = ofRandom(255);
     }
+    noiseImage.update();
     
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
+void ofApp::setup(){
+    createTexture();
+    
+    ofBackground(ofColor::black);
+    
+    if(ofIsGLProgrammableRenderer()){
+        ofLog() << "programrable renderer";
+    }
+    
+    if(!shader.load("noise")){
+        ofExit(1);
+    }
+    
+    std::vector<ofVec3f> pointVector;
+    for(int i = 0; i < gWindowWidth; i++){
+        for(int j = 0; j < gWindowHeight; j++){
+            pointVector.push_back(ofVec3f(i ,
+                                          j,  0.0));
+        }
+    }
+    
+    vbo.setVertexData(&pointVector.front(), gNumPixels , GL_DYNAMIC_DRAW);
 
+    camera.setPosition(ofVec3f(0,0, 1200));
+    camera.lookAt(ofVec3f(0,0,0));
+    camera.setFarClip(10000);
+    camera.setNearClip(0.1);
+    camera.setAspectRatio(1.3333);
+    camera.setFov(60.0);
+}
+
+
+//--------------------------------------------------------------
+void ofApp::update(){
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofSetColor(255);
+    
+    noiseImage.getTextureReference().bind();
+    
+    camera.begin();
     shader.begin();
-    ofRect(100, 100, 500, 500);
+    
+    shader.setUniform3fv("cameraPos", camera.getPosition().getPtr());
+    vbo.draw(GL_POINTS, 0, gNumPixels);
     shader.end();
+    camera.end();
+    noiseImage.getTextureReference().unbind();
+
 }
 
 //--------------------------------------------------------------

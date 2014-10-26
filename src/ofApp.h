@@ -20,6 +20,16 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 
     protected:
+        void createTexture();
+   
         ofShader shader;
-		
+        ofCamera camera;
+    
+    
+        ofMatrix4x4 viewMatrix;
+        ofMatrix4x4 projectionMatrix;
+        ofVbo vbo;
+    
+        ofImage noiseImage;
+
 };
