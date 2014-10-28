@@ -29,6 +29,7 @@ class ofApp : public ofBaseApp{
     
         ofVec2f offset[3];
         ofVec2f twistOffset;
+        ofVec2f noiseLightOffset;
     
         ofMatrix4x4 modelMatrix;
         ofMatrix4x4 viewMatrix;

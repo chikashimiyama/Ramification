@@ -37,15 +37,11 @@
         <args>1</args>
     </messageType>
     <messageType>
-        <address>/blurX</address>
+        <address>/twistFactor</address>
         <args>1</args>
     </messageType>
     <messageType>
-        <address>/blurY</address>
-        <args>1</args>
-    </messageType>
-    <messageType>
-        <address>/blurBrightness</address>
+        <address>/noiseFactor</address>
         <args>1</args>
     </messageType>
     <messageType>
@@ -77,11 +73,35 @@
         <args>1</args>
     </messageType>
     <messageType>
-        <address>/twistSpeedX</address>
+        <address>/twistOffsetX</address>
         <args>1</args>
     </messageType>
     <messageType>
-        <address>/twistSpeedY</address>
+        <address>/twistOffsetY</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/noiseToColorFactor</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/noiseLightFreqX</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/noiseLightFreqY</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/noiseLightAmp</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/noiseLightSpeedX</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/noiseLightSpeedY</address>
         <args>1</args>
     </messageType>
     <messageType>
