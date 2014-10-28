@@ -150,8 +150,7 @@ void ofApp::applyData(){
     modelMatrix.rotate(90, 1, 0, 0);
     modelMatrix.scale(parameterMap["/scaleX"][0], parameterMap["/scaleY"][0], 1.0);
     
-    ofVec3f cp(parameterMap["/camera"][0],parameterMap["/camera"][1],parameterMap["/camera"][2]);
-    viewMatrix.makeLookAtViewMatrix(cp, ofVec3f(0,0,0) , ofVec3f(0,1,0));
+
     
     avoidZero(parameterMap["/freqX"][0]);
     avoidZero(parameterMap["/freqY"][0]);
@@ -178,9 +177,20 @@ void ofApp::applyData(){
     noiseLightOffset.x = wrap(noiseLightOffset.x, (float)gNumGrid);
     noiseLightOffset.y = wrap(noiseLightOffset.y, (float)gNumGrid);
 
+    
+    float elevation = parameterMap["/camera/elevation"][0];
+    float distance = parameterMap["/camera/distance"][0];
+    float azimuth = parameterMap["/camera/azimuth"][0];
+    cameraPos.y = distance * sin(elevation) * cos(azimuth);
+    cameraPos.x = distance * sin(elevation) * sin(azimuth);
+    cameraPos.z = distance * cos(elevation);
+    
+    viewMatrix.makeLookAtViewMatrix(cameraPos, ofVec3f(0,0,0) , ofVec3f(0,1,0));
+    
     // attention the order of calculation !!!
     MVP =  modelMatrix * viewMatrix * projectionMatrix;
-    
+
+    ofLog() << cameraPos;
 }
 
 
@@ -220,7 +230,7 @@ void ofApp::draw(){
     shader.setUniform1f("distanceFactor", parameterMap["/distanceFactor"][0]);
     shader.setUniform1f("noiseToColorFactor", parameterMap["/noiseToColorFactor"][0]);
 
-    shader.setUniform3fv("cameraPos", &parameterMap["/camera"].front());
+    shader.setUniform3f("cameraPos", cameraPos.x , cameraPos.y, cameraPos.z);
     shader.setUniform2f("offset0", offset[0].x, offset[0].y);
     shader.setUniform2f("offset1", offset[1].x, offset[1].y);
     shader.setUniform2f("offset2", offset[2].x, offset[2].y);

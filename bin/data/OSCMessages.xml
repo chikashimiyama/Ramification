@@ -105,7 +105,15 @@
         <args>1</args>
     </messageType>
     <messageType>
-        <address>/camera</address>
-        <args>3</args>
+        <address>/camera/distance</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/camera/elevation</address>
+        <args>1</args>
+    </messageType>
+    <messageType>
+        <address>/camera/azimuth</address>
+        <args>1</args>
     </messageType>
 </messageList>

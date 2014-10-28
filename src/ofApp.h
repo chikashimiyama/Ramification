@@ -30,7 +30,7 @@ class ofApp : public ofBaseApp{
         ofVec2f offset[3];
         ofVec2f twistOffset;
         ofVec2f noiseLightOffset;
-    
+        ofVec3f cameraPos;
         ofMatrix4x4 modelMatrix;
         ofMatrix4x4 viewMatrix;
         ofMatrix4x4 projectionMatrix;
