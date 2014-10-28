@@ -2,15 +2,53 @@
 #include "const.h"
 
 ofApp::ofApp(std::map<std::string, std::vector<float> > parameterMap):
-parameterMap(parameterMap){}
+parameterMap(parameterMap){
+    planeImage.allocate(gWindowWidth, gWindowHeight, OF_IMAGE_COLOR);
+    sphereImage.allocate(gWindowWidth, gWindowHeight, OF_IMAGE_COLOR);
+    tubeImage.allocate(gWindowWidth, gWindowHeight, OF_IMAGE_COLOR);
+    ringImage.allocate(gWindowWidth, gWindowHeight, OF_IMAGE_COLOR);
+    
+    for(int i = 0; i < gWindowWidth; i++){
+        for(int j = 0; j < gWindowHeight; j++){
+            
+            float theta = (float)i / (float)(gWindowWidth) * g2PI;
+            float phi = (float)j / (float)(gWindowHeight) * g2PI;
+            float x = cos(theta) * sin(phi) * 0.5 + 0.5;
+            float y = sin(theta) * sin(phi) * 0.5 + 0.5;
+            float z = cos(phi) * 0.5 + 0.5;
+            
+
+            //plane
+            planeImage.setColor(i, j, ofFloatColor( i / (float)(gWindowWidth), j / (float)(gWindowHalfHeight), 0.5 ));
+            
+            //sphere
+            sphereImage.setColor(i, j, ofFloatColor(x,y,z));
+            
+            //tube
+            tubeImage.setColor(i, j,
+                               ofFloatColor(
+                                      cos( (float)i /(float)gWindowHeight * g2PI - M_PI) * 0.5 + 0.5 ,
+                                      sin( (float)j /(float)gWindowHeight * g2PI - M_PI) * 0.5 + 0.5 ,
+                                      sin( (float)i /(float)gWindowHeight * g2PI - M_PI) *
+                                            cos( (float)j /(float)gWindowHeight * g2PI) * 0.5 + 0.5));
+            
+            //ring
+            ringImage.setColor(i, j, ofFloatColor( cos(theta) * 0.5 + 0.5, sin(theta) * 0.5 + 0.5, 0.5 ));
+        }
+    }
+    planeImage.update();
+    sphereImage.update();
+    tubeImage.update();
+    ringImage.update();
+}
 
 
 void ofApp::createTexture(){
-    noiseImage.allocate(ofGetWidth(), ofGetHeight(), OF_IMAGE_GRAYSCALE );
-    
+
+    noiseImage.allocate(gWindowWidth, gWindowHeight, OF_IMAGE_GRAYSCALE );
     
     for(int i = 0; i < gNumPixels; i++){
-        noiseImage.getPixels()[i] = ofRandom(255);
+        noiseImage.getPixels()[i] = ofRandom(0.0, 1.0);
     }
     noiseImage.update();
     
@@ -43,8 +81,7 @@ void ofApp::setup(){
     
     vbo.setVertexData(&pointVector.front(), gNumPixels , GL_DYNAMIC_DRAW);
     
-    modelMatrix.setTranslation(-gWindowHalfWidth, -gWindowHalfHeight,0);
-    //modelMatrix.setRotate(ofQuaternion(90, ofVec3f(1.0, 0, 0 )));
+
 
     viewMatrix.makeLookAtViewMatrix(ofVec3f(0.0, 0, 1000), ofVec3f(0,0,0) , ofVec3f(0,1,0));
     projectionMatrix.makePerspectiveMatrix(60.0, 1.3333, 0.01, 10000);
@@ -96,20 +133,47 @@ void ofApp::processOSC(){
     }
 }
 
+template <typename T>
+T ofApp::wrap(T target, T operand){
+    if(operand == 0)
+        return 0;
+    while(target < 0)
+        target += operand;
+    while(target > operand)
+        target -= operand;
+    return target;
+}
 
 void ofApp::applyData(){
     
-    ofVec3f cp(parameterMap["/camera"][0],parameterMap["/camera"][1],parameterMap["/camera"][2]);
+    modelMatrix.makeIdentityMatrix();
+    modelMatrix.rotate(90, 1, 0, 0);
+    modelMatrix.scale(parameterMap["/scaleX"][0], parameterMap["/scaleY"][0], 1.0);
     
+    ofVec3f cp(parameterMap["/camera"][0],parameterMap["/camera"][1],parameterMap["/camera"][2]);
     viewMatrix.makeLookAtViewMatrix(cp, ofVec3f(0,0,0) , ofVec3f(0,1,0));
     
     avoidZero(parameterMap["/freqX"][0]);
     avoidZero(parameterMap["/freqY"][0]);
     
     for(int i = 0 ; i < 3 ; i++){
-        offset[i].x += parameterMap["/speedX"][i]  / (gWindowWidth /  parameterMap["/freqX"][i]);
-        offset[i].y += parameterMap["/speedY"][i]  / (gWindowHeight / parameterMap["/freqY"][i]);
+        float rotation = parameterMap["/rotate"][i];
+        float speedX = parameterMap["/speedX"][i] * cos(rotation) - parameterMap["/speedX"][i] * sin(rotation);
+        float speedY = parameterMap["/speedY"][i] * sin(rotation) + parameterMap["/speedY"][i] * cos(rotation);
+        offset[i].x += speedX/ (gWindowWidth /  parameterMap["/freqX"][i]);
+        offset[i].y += speedY/ (gWindowHeight / parameterMap["/freqY"][i]);
+        
+        offset[i].x = wrap(offset[i].x, (float)gWindowWidth);
+        offset[i].y = wrap(offset[i].y, (float)gWindowHeight);
+
     }
+    
+    twistOffset.x += parameterMap["/twistSpeedX"][0];
+    twistOffset.y += parameterMap["/twistSpeedY"][0];
+    
+    twistOffset.x = wrap(twistOffset.x, (float)g2PI);
+    twistOffset.y = wrap(twistOffset.y, (float)g2PI);
+
     // attention the order of calculation !!!
     MVP =  modelMatrix * viewMatrix * projectionMatrix;
     
@@ -135,11 +199,17 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofSetColor(255);
-    
-    noiseImage.getTextureReference().bind();
-    
-    
+    ofBackground(0);
+
+    ofEnableDepthTest();
+
     shader.begin();
+    shader.setUniformTexture("noiseTexture", noiseImage.getTextureReference(), 1);
+    shader.setUniformTexture("sphereTexture", sphereImage.getTextureReference(), 2);
+    shader.setUniformTexture("planeTexture", planeImage.getTextureReference(), 3);
+    shader.setUniformTexture("tubeTexture", tubeImage.getTextureReference(), 4);
+    shader.setUniformTexture("ringTexture", ringImage.getTextureReference(), 5);
+
     shader.setUniformMatrix4f("modelMatrix", modelMatrix);
     
     shader.setUniform1f("distanceFactor", parameterMap["/distanceFactor"][0]);
@@ -147,6 +217,14 @@ void ofApp::draw(){
     shader.setUniform2f("offset0", offset[0].x, offset[0].y);
     shader.setUniform2f("offset1", offset[1].x, offset[1].y);
     shader.setUniform2f("offset2", offset[2].x, offset[2].y);
+    
+    shader.setUniform2f("twistFreq", parameterMap["/twistFreqX"][0], parameterMap["/twistFreqY"][0]);
+    shader.setUniform2f("twistOffset", twistOffset.x, twistOffset.y);
+
+    shader.setUniform1f("sphereAmp", parameterMap["/sphereAmp"][0]);
+    shader.setUniform1f("tubeAmp", parameterMap["/tubeAmp"][0]);
+    shader.setUniform1f("planeAmp", parameterMap["/planeAmp"][0]);
+    shader.setUniform1f("ringAmp", parameterMap["/ringAmp"][0]);
 
     shader.setUniform2f("freq0",parameterMap["/freqX"][0], parameterMap["/freqY"][0]);
     shader.setUniform1f("amp0", parameterMap["/amp"][0]);
@@ -157,10 +235,7 @@ void ofApp::draw(){
     shader.setUniformMatrix4f("MVP", MVP);
     vbo.draw(GL_POINTS, 0, gNumPixels);
     shader.end();
-    
-    noiseImage.getTextureReference().unbind();
-
-    
+    ofDisableDepthTest();
 }
 
 //--------------------------------------------------------------

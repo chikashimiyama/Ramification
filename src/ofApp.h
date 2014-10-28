@@ -28,17 +28,21 @@ class ofApp : public ofBaseApp{
         ofCamera camera;
     
         ofVec2f offset[3];
+        ofVec2f twistOffset;
+    
         ofMatrix4x4 modelMatrix;
         ofMatrix4x4 viewMatrix;
         ofMatrix4x4 projectionMatrix;
         ofMatrix4x4 MVP;
         ofVbo vbo;
     
-        ofImage noiseImage;
-
+        ofFloatImage noiseImage, sphereImage, planeImage, tubeImage, ringImage;
+    
         std::map<std::string, std::vector<float> > parameterMap; // osc
         ofxOscReceiver oscReceiver;
     
+        template <typename T>
+        T wrap(T target, T operand);
         void processOSC();
         void applyData();
         void avoidZero(float &value); 

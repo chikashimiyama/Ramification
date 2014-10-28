@@ -9,11 +9,15 @@ uniform mat4 MVP;
 uniform vec2 offset0, offset1, offset2;
 uniform vec2 freq0, freq1, freq2;
 uniform float amp0, amp1, amp2;
-
+uniform vec2 twistFreq, twistOffset;
+uniform vec2 scale;
 uniform float distanceFactor;
 
+uniform float sphereAmp, tubeAmp, ringAmp, planeAmp;
+
 uniform vec3 cameraPos;
-uniform sampler2DRect tex0;
+uniform sampler2DRect noiseTexture, sphereTexture, tubeTexture, ringTexture, planeTexture;
+
 
 out float distFactor;
 out float value;
@@ -54,10 +58,10 @@ float calc(vec2 freq, vec2 offset, float amp){
     float nx = wrap(ix+1, 1024.0f );
     float ny = wrap(iy+1, 768.0f );
     
-    float v1 = texture(tex0, vec2(ix, iy))[0];
-    float v2 = texture(tex0, vec2(nx, iy))[0];
-    float v3 = texture(tex0, vec2(ix, ny))[0];
-    float v4 = texture(tex0, vec2(nx, ny))[0];
+    float v1 = texture(noiseTexture, vec2(ix, iy))[0];
+    float v2 = texture(noiseTexture, vec2(nx, iy))[0];
+    float v3 = texture(noiseTexture, vec2(ix, ny))[0];
+    float v4 = texture(noiseTexture, vec2(nx, ny))[0];
     // interpolate four values
     return (cosineInterpolation2d(v1, v2, v3, v4, factorX, factorY ) - 0.5) * 2.0 * amp;
 }
@@ -67,8 +71,22 @@ void main(){
     value += calc(freq0, offset0, amp0);
     value += calc(freq1, offset1, amp1);
     value += calc(freq2, offset2, amp2);
+    vec4 sphere = texture(sphereTexture, vec2(VertexPosition.x, VertexPosition.y)) - 0.5;
+    vec4 plane = texture(planeTexture, vec2(VertexPosition.x, VertexPosition.y)) - 0.5;
+    vec4 tube = texture(tubeTexture, vec2(VertexPosition.x, VertexPosition.y)) - 0.5;
+    vec4 ring = texture(ringTexture, vec2(VertexPosition.x, VertexPosition.y)) - 0.5;
+
+    float x = (sphere[0] *  sphereAmp + plane[0] * planeAmp + tube[0] * tubeAmp + ring[0] * ringAmp) * 768;
+    float y = (sphere[1] *  sphereAmp + plane[1] * planeAmp + tube[1] * tubeAmp + ring[1] * ringAmp) * 768;
+    float z = (sphere[2] *  sphereAmp + plane[2] * planeAmp + tube[2] * tubeAmp + ring[2] * ringAmp) * 768;
     
-    gl_Position =   MVP * vec4(VertexPosition.x, VertexPosition.y, value, 1.0);
+    float angleX = (y * twistFreq.x) / 1024.0f + twistOffset.x;
+    float angleY = (x * twistFreq.y) / 768.0f + twistOffset.y;
+    
+    x = (x * cos(angleX) - y * sin(angleX)) + (x * cos(angleY) - y * sin(angleY));
+    y = (x * sin(angleX) + y * cos(angleX)) + (x * sin(angleY) + y * cos(angleY));
+
+    gl_Position =   MVP * vec4( x,  y, value + z, 1.0);
     distFactor = 1.0- (distance(vec4(cameraPos,1.0), modelMatrix * vec4(VertexPosition, 1.0)) / distanceFactor);
 }
 
