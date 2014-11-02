@@ -22,9 +22,14 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 
     protected:
+        void createPanel();
         void createTexture();
+    
+        void drawShape();
    
+        ofFbo fbo, trailFbo, blurFbo;
         ofShader shader;
+        ofShader blurShader;
         ofCamera camera;
     
         ofVec2f offset[3];
@@ -36,6 +41,7 @@ class ofApp : public ofBaseApp{
         ofMatrix4x4 projectionMatrix;
         ofMatrix4x4 MVP;
         ofVbo vbo;
+        ofVbo panelVbo;
     
         ofFloatImage noiseImage, sphereImage, planeImage, tubeImage, ringImage;
     

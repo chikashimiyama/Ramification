@@ -3,117 +3,195 @@
     <messageType>
         <address>/distanceFactor</address>
         <args>1</args>
+        <default>3000</default>
     </messageType>
     <messageType>
         <address>/freqX</address>
         <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
     </messageType>
     <messageType>
         <address>/freqY</address>
         <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
     </messageType>
     <messageType>
-        <address>/amp</address>
+        <address>/ampX</address>
         <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
+    </messageType>
+    <messageType>
+        <address>/ampY</address>
+        <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
     </messageType>
     <messageType>
         <address>/speedX</address>
         <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
     </messageType>
     <messageType>
         <address>/speedY</address>
         <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
     </messageType>
     <messageType>
         <address>/rotate</address>
         <args>3</args>
+        <default index="0">0</default>
+        <default index="1">0</default>
+        <default index="2">0</default>
     </messageType>
     <messageType>
         <address>/scaleX</address>
         <args>1</args>
+        <default>1</default>
     </messageType>
     <messageType>
         <address>/scaleY</address>
         <args>1</args>
+        <default>1</default>
     </messageType>
     <messageType>
-        <address>/twistFactor</address>
+        <address>/scaleZ</address>
         <args>1</args>
+        <default>1</default>
     </messageType>
     <messageType>
         <address>/noiseFactor</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/planeAmp</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/sphereAmp</address>
         <args>1</args>
+        <default>1</default>
     </messageType>
     <messageType>
         <address>/tubeAmp</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/ringAmp</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/ringAmp</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/twistFreqX</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/twistFreqY</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/twistOffsetX</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/twistOffsetY</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/noiseToColorFactor</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/noiseLightFreqX</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/noiseLightFreqY</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
-        <address>/noiseLightAmp</address>
+        <address>/noiseLightAmpX</address>
         <args>1</args>
+        <default>0</default>
+    </messageType>
+    <messageType>
+        <address>/noiseLightAmpY</address>
+        <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/noiseLightSpeedX</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/noiseLightSpeedY</address>
         <args>1</args>
+        <default>0</default>
+    </messageType>
+    <messageType>
+        <address>/colorOffset</address>
+        <args>1</args>
+        <default>0</default>
+    </messageType>
+    <messageType>
+        <address>/blurX</address>
+        <args>1</args>
+        <default>0</default>
+    </messageType>
+    <messageType>
+        <address>/blurY</address>
+        <args>1</args>
+        <default>0</default>
+    </messageType>
+    <messageType>
+        <address>/motionBlurColor</address>
+        <args>1</args>
+        <default>0</default>
+    </messageType>
+    <messageType>
+        <address>/motionBlurAlpha</address>
+        <args>1</args>
+        <default>255</default>
     </messageType>
     <messageType>
         <address>/camera/distance</address>
         <args>1</args>
+        <default>-1500</default>
     </messageType>
     <messageType>
         <address>/camera/elevation</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
     <messageType>
         <address>/camera/azimuth</address>
         <args>1</args>
+        <default>0</default>
     </messageType>
 </messageList>

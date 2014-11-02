@@ -8,11 +8,13 @@ uniform mat4 MVP;
 
 uniform vec2 offset0, offset1, offset2, noiseLightOffset;
 uniform vec2 freq0, freq1, freq2, noiseLightFreq;
-uniform float amp0, amp1, amp2, noiseLightAmp;
+
+uniform vec2 amp0, amp1, amp2, noiseLightAmp;
 uniform vec2 twistFreq, twistOffset;
 uniform vec2 scale;
 uniform vec2 randomCoord;
 
+uniform float colorOffset;
 uniform float noiseFactor;
 uniform float distanceFactor;
 uniform float twistFactor;
@@ -22,8 +24,6 @@ uniform float sphereAmp, tubeAmp, ringAmp, planeAmp;
 
 uniform vec3 cameraPos;
 uniform sampler2DRect noiseTexture, sphereTexture, tubeTexture, ringTexture, planeTexture;
-
-
 
 out float VertexColor;
 
@@ -48,7 +48,7 @@ float cosineInterpolation2d(float v1, float v2, float v3, float v4, float x, flo
                                y);
 }
 
-float calc(vec2 freq, vec2 offset, float amp){
+float calc(vec2 freq, vec2 offset, vec2 amp){
     float vx = VertexPosition.x * (freq.x / gNumGrid) + offset.x;
     float vy = VertexPosition.y * (freq.y / gNumGrid) + offset.y;
     float ix = floor(vx);
@@ -63,12 +63,13 @@ float calc(vec2 freq, vec2 offset, float amp){
     float nx = wrap(ix+1, gNumGrid );
     float ny = wrap(iy+1, gNumGrid );
     
-    float v1 = texture(noiseTexture, vec2(ix, iy))[0];
-    float v2 = texture(noiseTexture, vec2(nx, iy))[0];
-    float v3 = texture(noiseTexture, vec2(ix, ny))[0];
-    float v4 = texture(noiseTexture, vec2(nx, ny))[0];
+    float v1 = (texture(noiseTexture, vec2(ix, iy))[0] - 0.5) * 2.0 * amp.x;
+    float v2 = (texture(noiseTexture, vec2(nx, iy))[0] - 0.5) * 2.0 * amp.x;
+    float v3 = (texture(noiseTexture, vec2(ix, ny))[0] - 0.5) * 2.0 * amp.y;
+    float v4 = (texture(noiseTexture, vec2(nx, ny))[0] - 0.5) * 2.0 * amp.y;
+    
     // interpolate four values
-    return (cosineInterpolation2d(v1, v2, v3, v4, factorX, factorY ) - 0.5) * 2.0 * amp;
+    return cosineInterpolation2d(v1, v2, v3, v4, factorX, factorY );
 }
 
 void main(){
@@ -94,17 +95,18 @@ void main(){
     float angleX = ((y * twistFreq.x)  + twistOffset.x);
     float angleY = ((x * twistFreq.y)  + twistOffset.y);
 
-    
-    x = (x * cos(angleX) - y * sin(angleX)) + (x * cos(angleY) - y * sin(angleY));
-    y = (x * sin(angleX) + y * cos(angleX)) + (x * sin(angleY) + y * cos(angleY));
+    x = (x * cos(angleX) - y * sin(angleX));
+    y = (x * sin(angleX) + y * cos(angleX));
+    x = (x * cos(angleY) - y * sin(angleY));
+    y = (x * sin(angleY) + y * cos(angleY));
     
     vec2 lookupCoord = vec2(wrap(VertexPosition.x + randomCoord.x, gNumGrid),  wrap(VertexPosition.y + randomCoord.y, gNumGrid));
     float noise = texture(noiseTexture, lookupCoord)[0];
     gl_Position =   MVP * vec4( x  * gNumGrid,  y * gNumGrid, z * gNumGrid + value + ((noise-0.5) * noiseFactor), 1.0);
     
     VertexColor = 1.0 - (noise * noiseToColorFactor);
-    VertexColor -= (distance(vec4(cameraPos,1.0), modelMatrix * vec4(VertexPosition, 1.0)) / distanceFactor);
-    VertexColor += brightness;
+    VertexColor -= distance(vec4(cameraPos,1.0), modelMatrix * vec4(VertexPosition, 1.0)) / distanceFactor;
+    VertexColor += brightness + colorOffset;
 }
 
 

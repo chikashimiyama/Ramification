@@ -1,6 +1,23 @@
 #include "ofApp.h"
 #include "const.h"
 
+void ofApp::createPanel(){
+    std::vector<ofVec3f> vertVector;
+    std::vector<ofVec2f> texCoordVector;
+    vertVector.push_back(ofVec3f(-0.5, -0.5, 0));
+    vertVector.push_back(ofVec3f(0.5, -0.5, 0));
+    vertVector.push_back(ofVec3f(0.5, 0.5, 0));
+    vertVector.push_back(ofVec3f(-0.5, 0.5, 0));
+    texCoordVector.push_back(ofVec2f(0, 0));
+    texCoordVector.push_back(ofVec2f(1024, 0));
+    texCoordVector.push_back(ofVec2f(1024, 768));
+    texCoordVector.push_back(ofVec2f(0, 768));
+    
+    panelVbo.disableColors();
+    panelVbo.setVertexData(&vertVector.front(), 4, GL_STATIC_DRAW);
+   // panelVbo.setTexCoordData(&texCoordVector.front(), 4, GL_STATIC_DRAW);
+}
+
 ofApp::ofApp(std::map<std::string, std::vector<float> > parameterMap):
 parameterMap(parameterMap){
     planeImage.allocate(gNumGrid, gNumGrid, OF_IMAGE_COLOR);
@@ -10,13 +27,11 @@ parameterMap(parameterMap){
     
     for(int i = 0; i < gNumGrid; i++){
         for(int j = 0; j < gNumGrid; j++){
-            
             float theta = (float)i / (float)(gNumGrid) * g2PI;
             float phi = (float)j / (float)(gNumGrid) * g2PI;
             float x = cos(theta) * sin(phi) * 0.5 + 0.5;
             float y = sin(theta) * sin(phi) * 0.5 + 0.5;
             float z = cos(phi) * 0.5 + 0.5;
-            
 
             //plane
             planeImage.setColor(i, j, ofFloatColor( i / (float)(gNumGrid), j / (float)(gNumGrid), 0.5 ));
@@ -40,8 +55,18 @@ parameterMap(parameterMap){
     sphereImage.update();
     tubeImage.update();
     ringImage.update();
-}
 
+    trailFbo.allocate(ofGetWidth(), ofGetHeight(), GL_RGB);
+    blurFbo.allocate(ofGetWidth(), ofGetHeight(), GL_RGB);
+    trailFbo.begin();
+    ofClear(0,0,0, 0);
+    trailFbo.end();
+    
+    blurFbo.begin();
+    ofClear(255 , 255, 255, 0);
+    blurFbo.end();
+
+}
 
 void ofApp::createTexture(){
 
@@ -56,38 +81,30 @@ void ofApp::createTexture(){
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    
     oscReceiver.setup(50000);
-
-    
     createTexture();
-    
+    createPanel();
     ofBackground(ofColor::black);
-    
     if(ofIsGLProgrammableRenderer()){
         ofLog() << "programrable renderer";
     }
-    
     if(!shader.load("noise")){
         ofExit(1);
     }
-    
+//    if(!blurShader.load("blur")){
+//        ofExit(1);
+//    }
+
     std::vector<ofVec3f> pointVector;
     for(int i = 0; i < gNumGrid; i++){
         for(int j = 0; j < gNumGrid; j++){
             pointVector.push_back(ofVec3f(i ,j,  0.0));
         }
     }
-    
     vbo.setVertexData(&pointVector.front(), gNumPixels , GL_DYNAMIC_DRAW);
-    
-
-
     viewMatrix.makeLookAtViewMatrix(ofVec3f(0.0, 0, 1000), ofVec3f(0,0,0) , ofVec3f(0,1,0));
-    projectionMatrix.makePerspectiveMatrix(60.0, 1.3333, 0.01, 10000);
-    
+    projectionMatrix.makePerspectiveMatrix(60.0, static_cast<float>(ofGetWidth()) /static_cast<float>(ofGetHeight()), 0.01, 10000);
 }
-
 
 void ofApp::processOSC(){
     while(oscReceiver.hasWaitingMessages()){
@@ -108,7 +125,6 @@ void ofApp::processOSC(){
                 ofLog(OF_LOG_ERROR) << "ofApp::processOSC " << addr << "number of args unmatched. received " << mes.getNumArgs() << " supposed to be " << (*it).second.size();
                 continue;
             }
-            
             for(int i = 0; i < mes.getNumArgs(); i++){
                 ofxOscArgType tp = mes.getArgType(i);
                 
@@ -145,13 +161,9 @@ T ofApp::wrap(T target, T operand){
 }
 
 void ofApp::applyData(){
-    
     modelMatrix.makeIdentityMatrix();
     modelMatrix.rotate(90, 1, 0, 0);
-    modelMatrix.scale(parameterMap["/scaleX"][0], parameterMap["/scaleY"][0], 1.0);
-    
-
-    
+    modelMatrix.scale(parameterMap["/scaleX"][0], parameterMap["/scaleY"][0], parameterMap["/scaleZ"][0]);
     avoidZero(parameterMap["/freqX"][0]);
     avoidZero(parameterMap["/freqY"][0]);
     
@@ -161,10 +173,8 @@ void ofApp::applyData(){
         float speedY = parameterMap["/speedY"][i] * sin(rotation) + parameterMap["/speedY"][i] * cos(rotation);
         offset[i].x += speedX/ (gNumGrid /  parameterMap["/freqX"][i]);
         offset[i].y += speedY/ (gNumGrid / parameterMap["/freqY"][i]);
-        
         offset[i].x = wrap(offset[i].x, (float)gNumGrid);
         offset[i].y = wrap(offset[i].y, (float)gNumGrid);
-
     }
     
     twistOffset.x += parameterMap["/twistSpeedX"][0];
@@ -177,20 +187,16 @@ void ofApp::applyData(){
     noiseLightOffset.x = wrap(noiseLightOffset.x, (float)gNumGrid);
     noiseLightOffset.y = wrap(noiseLightOffset.y, (float)gNumGrid);
 
-    
+    float azimuth = parameterMap["/camera/azimuth"][0];
     float elevation = parameterMap["/camera/elevation"][0];
     float distance = parameterMap["/camera/distance"][0];
-    float azimuth = parameterMap["/camera/azimuth"][0];
+
     cameraPos.y = distance * sin(elevation) * cos(azimuth);
     cameraPos.x = distance * sin(elevation) * sin(azimuth);
     cameraPos.z = distance * cos(elevation);
-    
     viewMatrix.makeLookAtViewMatrix(cameraPos, ofVec3f(0,0,0) , ofVec3f(0,1,0));
-    
     // attention the order of calculation !!!
     MVP =  modelMatrix * viewMatrix * projectionMatrix;
-
-    ofLog() << cameraPos;
 }
 
 
@@ -210,13 +216,8 @@ void ofApp::update(){
     applyData();
 }
 
-//--------------------------------------------------------------
-void ofApp::draw(){
-    ofSetColor(255);
-    ofBackground(0);
-
+void ofApp::drawShape(){
     ofEnableDepthTest();
-
     shader.begin();
     shader.setUniform2f("randomCoord", ofRandom(0, gNumGrid), ofRandom(gNumGrid));
     shader.setUniformTexture("noiseTexture", noiseImage.getTextureReference(), 1);
@@ -224,12 +225,12 @@ void ofApp::draw(){
     shader.setUniformTexture("planeTexture", planeImage.getTextureReference(), 3);
     shader.setUniformTexture("tubeTexture", tubeImage.getTextureReference(), 4);
     shader.setUniformTexture("ringTexture", ringImage.getTextureReference(), 5);
-
+    
     shader.setUniformMatrix4f("modelMatrix", modelMatrix);
     shader.setUniform1f("noiseFactor", parameterMap["/noiseFactor"][0]);
     shader.setUniform1f("distanceFactor", parameterMap["/distanceFactor"][0]);
     shader.setUniform1f("noiseToColorFactor", parameterMap["/noiseToColorFactor"][0]);
-
+    
     shader.setUniform3f("cameraPos", cameraPos.x , cameraPos.y, cameraPos.z);
     shader.setUniform2f("offset0", offset[0].x, offset[0].y);
     shader.setUniform2f("offset1", offset[1].x, offset[1].y);
@@ -238,26 +239,46 @@ void ofApp::draw(){
     shader.setUniform1f("twistFactor", parameterMap["/twistFactor"][0]);
     shader.setUniform2f("twistFreq", parameterMap["/twistFreqX"][0], parameterMap["/twistFreqY"][0]);
     shader.setUniform2f("twistOffset", parameterMap["/twistOffsetX"][0], parameterMap["/twistOffsetY"][0]);
-
+    
     shader.setUniform1f("sphereAmp", parameterMap["/sphereAmp"][0]);
     shader.setUniform1f("tubeAmp", parameterMap["/tubeAmp"][0]);
     shader.setUniform1f("planeAmp", parameterMap["/planeAmp"][0]);
     shader.setUniform1f("ringAmp", parameterMap["/ringAmp"][0]);
     
     shader.setUniform2f("noiseLightFreq", parameterMap["/noiseLightFreqX"][0], parameterMap["/noiseLightFreqY"][0]);
-    shader.setUniform1f("noiseLightAmp", parameterMap["/noiseLightAmp"][0]);
+    shader.setUniform2f("noiseLightAmp", parameterMap["/noiseLightAmpX"][0], parameterMap["/noiseLightAmpY"][0]);
     shader.setUniform2f("noiseLightOffset", noiseLightOffset.x, noiseLightOffset.y);
     
     shader.setUniform2f("freq0",parameterMap["/freqX"][0], parameterMap["/freqY"][0]);
-    shader.setUniform1f("amp0", parameterMap["/amp"][0]);
+    shader.setUniform2f("amp0", parameterMap["/ampX"][0], parameterMap["/ampY"][0]);
     shader.setUniform2f("freq1",parameterMap["/freqX"][1], parameterMap["/freqY"][1]);
-    shader.setUniform1f("amp1", parameterMap["/amp"][1]);
+    shader.setUniform2f("amp1", parameterMap["/ampX"][1], parameterMap["/ampY"][1]);
     shader.setUniform2f("freq2",parameterMap["/freqX"][2], parameterMap["/freqY"][2]);
-    shader.setUniform1f("amp2", parameterMap["/amp"][2]);
+    shader.setUniform2f("amp2", parameterMap["/ampX"][2], parameterMap["/ampY"][2]);
+    shader.setUniform1f("colorOffset", parameterMap["/colorOffset"][0]);
     shader.setUniformMatrix4f("MVP", MVP);
     vbo.draw(GL_POINTS, 0, gNumPixels);
     shader.end();
     ofDisableDepthTest();
+
+}
+
+//--------------------------------------------------------------
+void ofApp::draw(){
+    int color = parameterMap["/motionBlurColor"][0];
+    int alpha = parameterMap["/motionBlurAlpha"][0];
+
+//    blurFbo.begin();
+//    ofSetColor(color, color, color, alpha);
+//    ofRect(0, 0, ofGetWidth(), ofGetHeight());
+//    ofSetColor(255,255,255, 255);
+//    drawShape();
+//    blurFbo.end();
+//    blurFbo.draw(0,0);
+    drawShape();
+
+    ofDrawBitmapString(ofToString(cameraPos), 5, 15);
+
 }
 
 //--------------------------------------------------------------
